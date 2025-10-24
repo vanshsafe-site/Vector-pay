@@ -748,16 +748,32 @@
     const paymentModal = document.getElementById('paymentModal');
     const amountInput = document.getElementById('amountInput');
     const upiInput = document.getElementById('upiInput');
-  
-    // Create video camera element
+    
+    let currentStream = null;
+    let usingFront = false;
+    
+    // Create camera elements
     const video = document.createElement('video');
     video.style.width = '100%';
     video.style.borderRadius = '16px';
     video.style.marginTop = '10px';
     video.style.display = 'none';
+    video.style.cursor = 'pointer';
     qrSection.insertBefore(video, qrCode);
-  
-    // Random QR generator (creates different pattern each time)
+    
+    const flipBtn = document.createElement('button');
+    flipBtn.textContent = 'Flip Camera';
+    flipBtn.style.margin = '10px auto';
+    flipBtn.style.display = 'none';
+    flipBtn.style.padding = '8px 16px';
+    flipBtn.style.border = 'none';
+    flipBtn.style.background = '#4285f4';
+    flipBtn.style.color = 'white';
+    flipBtn.style.borderRadius = '8px';
+    flipBtn.style.cursor = 'pointer';
+    qrSection.insertBefore(flipBtn, qrCode);
+    
+    // Generate random QR
     function generateRandomQR() {
       qrCode.innerHTML = '';
       for (let i = 0; i < 49; i++) {
@@ -767,87 +783,107 @@
         qrCode.appendChild(div);
       }
     }
-  
-    // Open camera when QR is tapped
-    scanBtn.addEventListener('click', async () => {
-      qrSection.style.display = 'block';
-      qrSection.scrollIntoView({ behavior: 'smooth' });
-  
+    
+    // Start camera with given facing mode
+    async function startCamera() {
+      stopCamera();
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const constraints = {
+          video: { facingMode: usingFront ? 'user' : 'environment' }
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        currentStream = stream;
         video.srcObject = stream;
         video.play();
         video.style.display = 'block';
+        flipBtn.style.display = 'block';
       } catch (err) {
         alert('Camera access denied or unavailable.');
       }
-    });
-  
-    // Take picture & show fake random QR
-    video.addEventListener('click', () => {
-      video.pause();
-      const stream = video.srcObject;
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+    }
+    
+    // Stop current stream
+    function stopCamera() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(t => t.stop());
+        currentStream = null;
       }
+    }
+    
+    // When "Scan QR" clicked
+    scanBtn.addEventListener('click', () => {
+      qrSection.style.display = 'block';
+      qrCode.style.display = 'none';
+      qrSection.scrollIntoView({ behavior: 'smooth' });
+      startCamera();
+    });
+    
+    // Flip camera
+    flipBtn.addEventListener('click', () => {
+      usingFront = !usingFront;
+      startCamera();
+    });
+    
+    // Take photo
+    video.addEventListener('click', () => {
+      stopCamera();
       video.style.display = 'none';
+      flipBtn.style.display = 'none';
+      qrCode.style.display = 'grid';
       generateRandomQR();
     });
-  
+    
     // Payment process
-    document.getElementById('enterAmountBtn').addEventListener('click', () => {
+    enterAmountBtn.addEventListener('click', () => {
       paymentModal.style.display = 'flex';
-      upiInput.value = 'upiuser@bank'; // auto fill receiver
+      upiInput.value = 'upiuser@bank';
       amountInput.focus();
     });
-  
+    
     document.getElementById('cancelQrBtn').addEventListener('click', () => {
       qrSection.style.display = 'none';
+      stopCamera();
     });
-  
+    
     document.getElementById('cancelPayBtn').addEventListener('click', () => {
       paymentModal.style.display = 'none';
     });
-  
+    
     document.getElementById('confirmPayBtn').addEventListener('click', () => {
       const amount = amountInput.value;
       if (!amount || amount <= 0) {
         alert('Please enter a valid amount');
         return;
       }
-  
       paymentModal.style.display = 'none';
-      setTimeout(() => {
-        showSuccess(amount, 'UPI user', 'upiuser@bank');
-      }, 800);
+      setTimeout(() => showSuccess(amount, 'UPI user', 'upiuser@bank'), 800);
     });
-  
+    
     function showSuccess(amount, name, upi) {
       const txId = 'VEC' + Math.random().toString(36).substr(2, 9).toUpperCase();
       document.getElementById('successAmount').textContent = '₹' + parseFloat(amount).toLocaleString();
       document.getElementById('successRecipient').textContent = name;
       document.getElementById('successUpi').textContent = upi;
       document.getElementById('successTxId').textContent = txId;
-  
       document.getElementById('successModal').style.display = 'flex';
       document.getElementById('successScreen').style.display = 'block';
       createConfetti();
     }
-  
+    
     document.getElementById('doneBtn').addEventListener('click', () => {
       document.getElementById('successModal').style.display = 'none';
       qrSection.style.display = 'none';
       amountInput.value = '';
       upiInput.value = '';
     });
-  
+    
     // Close modals on background click
     document.querySelectorAll('.modal').forEach(modal => {
-      modal.addEventListener('click', (e) => {
+      modal.addEventListener('click', e => {
         if (e.target === modal) modal.style.display = 'none';
       });
     });
-  
+    
     // Confetti animation
     function createConfetti() {
       const colors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335'];
@@ -874,7 +910,7 @@
         }, i * 50);
       }
     }
-  </script>
-  
+    </script>
+    
 </body>
 </html>
