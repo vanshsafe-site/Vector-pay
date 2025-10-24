@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vector Pay — UPI Payments</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+    
+    :root {
+      --gpay-blue: #1a73e8;
+      --gpay-green: #34a853;
+      --gpay-yellow: #fbbc04;
+      --gpay-red: #ea4335;
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #202124;
+      --text-secondary: #5f6368;
+      --border: #dadce0;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--gpay-blue) 0%, #1557b0 100%);
+      padding: 20px 20px 80px;
+      position: relative;
+      color: white;
+    }
+    
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      background: linear-gradient(135deg, #4285f4, #34a853);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .app-name {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    
+    .menu-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .menu-icon:hover {
+      background: rgba(255,255,255,0.25);
+    }
+    
+    .balance-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 20px;
+      color: var(--text);
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 100px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .balance-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    
+    .balance-amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--gpay-blue);
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    
+    .currency {
+      font-size: 20px;
+    }
+    
+    /* Main Content */
+    .content {
+      padding: 80px 20px 20px;
+    }
+    
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .action-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      background: linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 100%);
+    }
+    
+    .action-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      text-align: center;
+    }
+    
+    /* Search Bar */
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      margin-bottom: 24px;
+      transition: all 0.2s;
+    }
+    
+    .search-bar:focus-within {
+      border-color: var(--gpay-blue);
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+    }
+    
+    .search-icon {
+      color: var(--text-secondary);
+      font-size: 20px;
+    }
+    
+    .search-bar input {
+      border: none;
+      outline: none;
+      flex: 1;
+      font-size: 15px;
+      background: transparent;
+      color: var(--text);
+    }
+    
+    .search-bar input::placeholder {
+      color: var(--text-secondary);
+    }
+    
+    /* Section */
+    .section {
+      margin-bottom: 24px;
+    }
+    
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .see-all {
+      font-size: 14px;
+      color: var(--gpay-blue);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    /* Transaction List */
+    .transaction {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .transaction:hover {
+      background: #f8f9fa;
+    }
+    
+    .tx-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gpay-blue), var(--gpay-green));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
+    }
+    
+    .tx-details {
+      flex: 1;
+    }
+    
+    .tx-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    
+    .tx-info {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .tx-amount {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .tx-amount.positive {
+      color: var(--gpay-green);
+    }
+    
+    .tx-amount.negative {
+      color: var(--text);
+    }
+    
+    /* QR Scanner */
+    .qr-section {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    
+    .qr-container {
+      width: 200px;
+      height: 200px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    
+    .qr-pixel {
+      background: #000;
+      border-radius: 2px;
+      aspect-ratio: 1;
+    }
+    
+    .qr-pixel.white {
+      background: #fff;
+    }
+    
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: var(--gpay-blue);
+      color: white;
+      border: none;
+      border-radius: 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+    }
+    
+    .btn-primary:hover {
+      background: #1557b0;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.4);
+      transform: translateY(-1px);
+    }
+    
+    .btn-secondary {
+      width: 100%;
+      padding: 16px;
+      background: white;
+      color: var(--gpay-blue);
+      border: 2px solid var(--gpay-blue);
+      border-radius: 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 12px;
+    }
+    
+    .btn-secondary:hover {
+      background: #e8f0fe;
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.2s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 24px;
+      padding: 28px;
+      max-width: 400px;
+      width: 100%;
+      animation: slideUp 0.3s;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    .input-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: block;
+    }
+    
+    .input-field {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--gpay-blue);
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    
+    .modal-actions button {
+      flex: 1;
+    }
+    
+    /* Success Animation */
+    .success-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--gpay-green), #2d8e47);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 48px;
+      animation: successPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    @keyframes successPop {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .success-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    
+    .success-amount {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--gpay-blue);
+      margin-bottom: 16px;
+    }
+    
+    .success-details {
+      background: #f8f9fa;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    
+    .detail-label {
+      color: var(--text-secondary);
+    }
+    
+    .detail-value {
+      color: var(--text);
+      font-weight: 500;
+    }
+    
+    /* Warning Banner */
+    .warning-banner {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border-left: 4px solid var(--gpay-yellow);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #e65100;
+    }
+    
+    .warning-banner strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.05);
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-secondary);
+    }
+    
+    .nav-item.active {
+      color: var(--gpay-blue);
+    }
+    
+    .nav-item:hover {
+      color: var(--gpay-blue);
+    }
+    
+    .nav-icon {
+      font-size: 24px;
+    }
+    
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .container { border-radius: 0; min-height: 100vh; }
+      .content { padding-bottom: 100px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-top">
+        <div class="logo-group">
+          <div class="logo">VP</div>
+          <div class="app-name">Vector Pay</div>
+        </div>
+        <div class="menu-icon">⋮</div>
+      </div>
+      
+      <div class="balance-card">
+        <div class="balance-label">Available Balance</div>
+        <div class="balance-amount">
+          <span class="currency">₹</span>
+          <span id="balance">10,000</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <div class="action-btn" id="scanBtn">
+          <div class="action-icon">📷</div>
+          <div class="action-label">Scan QR</div>
+        </div>
+        <div class="action-btn" id="payContactBtn">
+          <div class="action-icon">👤</div>
+          <div class="action-label">To Contact</div>
+        </div>
+        <div class="action-btn" id="payPhoneBtn">
+          <div class="action-icon">📞</div>
+          <div class="action-label">To Phone</div>
+        </div>
+        <div class="action-btn" id="bankBtn">
+          <div class="action-icon">🏦</div>
+          <div class="action-label">To Bank</div>
+        </div>
+      </div>
+      
+      <!-- Search Bar -->
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Pay anyone with UPI ID">
+      </div>
+      
+      <!-- Warning Banner -->
+      <div class="warning-banner">
+        <strong>⚠️ Educational Demo</strong>
+        This is a simulated UPI app for learning purposes only. Never share your real UPI PIN. Always verify recipient details in official banking apps.
+      </div>
+      
+      <!-- Recent Transactions -->
+      <div class="section">
+        <div class="section-title">
+          <span>Recent Transactions</span>
+          <span class="see-all">See all</span>
+        </div>
+        
+        <div class="transaction">
+          <div class="tx-avatar">R</div>
+          <div class="tx-details">
+            <div class="tx-name">Rajesh Kumar</div>
+            <div class="tx-info">Yesterday, 3:24 PM</div>
+          </div>
+          <div class="tx-amount negative">-₹350</div>
+        </div>
+        
+        <div class="transaction">
+          <div class="tx-avatar" style="background: linear-gradient(135deg, var(--gpay-green), var(--gpay-yellow))">P</div>
+          <div class="tx-details">
+            <div class="tx-name">Priya Singh</div>
+            <div class="tx-info">Oct 22, 11:15 AM</div>
+          </div>
+          <div class="tx-amount positive">+₹1,200</div>
+        </div>
+        
+        <div class="transaction">
+          <div class="tx-avatar" style="background: linear-gradient(135deg, var(--gpay-red), var(--gpay-yellow))">S</div>
+          <div class="tx-details">
+            <div class="tx-name">Swiggy</div>
+            <div class="tx-info">Oct 21, 8:30 PM</div>
+          </div>
+          <div class="tx-amount negative">-₹540</div>
+        </div>
+      </div>
+      
+      <!-- QR Section (Hidden by default) -->
+      <div class="qr-section" id="qrSection" style="display:none;">
+        <h3 style="margin-bottom: 8px;">Scan & Pay</h3>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Point your camera at the QR code</p>
+        <div class="qr-container" id="qrCode"></div>
+        <button class="btn-primary" id="enterAmountBtn">Enter Amount & Pay</button>
+        <button class="btn-secondary" id="cancelQrBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Payment Modal -->
+  <div class="modal" id="paymentModal">
+    <div class="modal-content">
+      <div class="modal-header">Enter Payment Details</div>
+      <div class="input-group">
+        <label class="input-label">Amount</label>
+        <input type="number" class="input-field" id="amountInput" placeholder="₹ 0">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Recipient UPI ID</label>
+        <input type="text" class="input-field" id="upiInput" placeholder="name@bank">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Note (Optional)</label>
+        <input type="text" class="input-field" id="noteInput" placeholder="Add a note">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="cancelPayBtn">Cancel</button>
+        <button class="btn-primary" id="confirmPayBtn">Pay Now</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Success Modal -->
+  <div class="modal" id="successModal">
+    <div class="modal-content">
+      <div class="success-screen" id="successScreen">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Payment Successful!</div>
+        <div class="success-amount" id="successAmount">₹0</div>
+        <div class="success-details">
+          <div class="detail-row">
+            <span class="detail-label">To</span>
+            <span class="detail-value" id="successRecipient">-</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">UPI ID</span>
+            <span class="detail-value" id="successUpi">-</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Transaction ID</span>
+            <span class="detail-value" id="successTxId">-</span>
+          </div>
+        </div>
+        <button class="btn-primary" id="doneBtn">Done</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Home</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">💼</div>
+      <div class="nav-label">Business</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📊</div>
+      <div class="nav-label">History</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">Settings</div>
+    </div>
+  </div>
+
+  <script>
+    // Generate QR Code Pattern
+    function generateQR() {
+      const qr = document.getElementById('qrCode');
+      const pattern = [
+        1,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,
+        1,0,1,1,1,0,1,
+        1,0,1,1,1,0,1,
+        1,0,1,1,1,0,1,
+        1,0,0,0,0,0,1,
+        1,1,1,1,1,1,1
+      ];
+      
+      qr.innerHTML = '';
+      pattern.forEach(pixel => {
+        const div = document.createElement('div');
+        div.className = pixel === 1 ? 'qr-pixel' : 'qr-pixel white';
+        qr.appendChild(div);
+      });
+    }
+    
+    // Event Listeners
+    document.getElementById('scanBtn').addEventListener('click', () => {
+      generateQR();
+      document.getElementById('qrSection').style.display = 'block';
+      document.getElementById('qrSection').scrollIntoView({ behavior: 'smooth' });
+    });
+    
+    document.getElementById('cancelQrBtn').addEventListener('click', () => {
+      document.getElementById('qrSection').style.display = 'none';
+    });
+    
+    document.getElementById('enterAmountBtn').addEventListener('click', () => {
+      document.getElementById('paymentModal').style.display = 'flex';
+      document.getElementById('amountInput').focus();
+    });
+    
+    document.getElementById('payContactBtn').addEventListener('click', () => {
+      document.getElementById('paymentModal').style.display = 'flex';
+      document.getElementById('upiInput').value = 'user@paytm';
+    });
+    
+    document.getElementById('cancelPayBtn').addEventListener('click', () => {
+      document.getElementById('paymentModal').style.display = 'none';
+    });
+    
+    document.getElementById('confirmPayBtn').addEventListener('click', () => {
+      const amount = document.getElementById('amountInput').value;
+      const upi = document.getElementById('upiInput').value;
+      
+      if (!amount || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+      
+      if (!upi) {
+        alert('Please enter recipient UPI ID');
+        return;
+      }
+      
+      // Hide payment modal
+      document.getElementById('paymentModal').style.display = 'none';
+      
+      // Show success after delay
+      setTimeout(() => {
+        showSuccess(amount, upi);
+      }, 800);
+    });
+    
+    function showSuccess(amount, upi) {
+      const txId = 'VEC' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      
+      document.getElementById('successAmount').textContent = '₹' + parseFloat(amount).toLocaleString();
+      document.getElementById('successRecipient').textContent = upi.split('@')[0];
+      document.getElementById('successUpi').textContent = upi;
+      document.getElementById('successTxId').textContent = txId;
+      
+      document.getElementById('successModal').style.display = 'flex';
+      document.getElementById('successScreen').style.display = 'block';
+      
+      // Confetti effect
+      createConfetti();
+    }
+    
+    document.getElementById('doneBtn').addEventListener('click', () => {
+      document.getElementById('successModal').style.display = 'none';
+      document.getElementById('qrSection').style.display = 'none';
+      
+      // Reset inputs
+      document.getElementById('amountInput').value = '';
+      document.getElementById('upiInput').value = '';
+      document.getElementById('noteInput').value = '';
+    });
+    
+    // Close modals on backdrop click
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    });
+    
+    // Confetti animation
+    function createConfetti() {
+      const colors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335'];
+      for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.style.position = 'fixed';
+          confetti.style.width = '10px';
+          confetti.style.height = '10px';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.left = Math.random() * window.innerWidth + 'px';
+          confetti.style.top = '-10px';
+          confetti.style.borderRadius = '50%';
+          confetti.style.zIndex = '10000';
+          confetti.style.pointerEvents = 'none';
+          document.body.appendChild(confetti);
+          
+          const fall = confetti.animate([
+            { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+            { transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+          ], {
+            duration: 2000 + Math.random() * 1000,
+            easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+          });
+          
+          fall.onfinish = () => confetti.remove();
+        }, i * 30);
+      }
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        document.getElementById('qrSection').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
