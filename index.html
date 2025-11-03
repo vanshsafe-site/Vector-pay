@@ -748,20 +748,19 @@
     const paymentModal = document.getElementById('paymentModal');
     const amountInput = document.getElementById('amountInput');
     const upiInput = document.getElementById('upiInput');
-  
+    
     let currentStream = null;
     let usingFront = false;
-  
-    // Create camera elements (video + flip button) - inserted into qrSection before qrCode
+    
+    // Create camera elements
     const video = document.createElement('video');
     video.style.width = '100%';
     video.style.borderRadius = '16px';
     video.style.marginTop = '10px';
     video.style.display = 'none';
     video.style.cursor = 'pointer';
-    video.setAttribute('playsinline', ''); // mobile hint
     qrSection.insertBefore(video, qrCode);
-  
+    
     const flipBtn = document.createElement('button');
     flipBtn.textContent = 'Flip Camera';
     flipBtn.style.margin = '10px auto';
@@ -773,75 +772,36 @@
     flipBtn.style.borderRadius = '8px';
     flipBtn.style.cursor = 'pointer';
     qrSection.insertBefore(flipBtn, qrCode);
-  
-    // Helper: localStorage keys
-    const LS_QR_KEY = 'vp_cached_qr_img';
-  
-    // Save dataURL to localStorage
-    function saveCachedQr(dataUrl) {
-      try {
-        localStorage.setItem(LS_QR_KEY, dataUrl);
-      } catch (e) {
-        console.warn('Could not save QR to localStorage (maybe too large).', e);
+    
+    // Generate random QR
+    function generateRandomQR() {
+      qrCode.innerHTML = '';
+      for (let i = 0; i < 49; i++) {
+        const div = document.createElement('div');
+        const isBlack = Math.random() > 0.5;
+        div.className = isBlack ? 'qr-pixel' : 'qr-pixel white';
+        qrCode.appendChild(div);
       }
     }
-  
-    // Load cached image (returns dataURL or null)
-    function loadCachedQr() {
-      return localStorage.getItem(LS_QR_KEY);
-    }
-  
-    // Clear cached image
-    function clearCachedQr() {
-      localStorage.removeItem(LS_QR_KEY);
-      // remove any visible img element in qrCode
-      const existing = qrCode.querySelector('img');
-      if (existing) existing.remove();
-    }
-  
-    // Display the cached QR image inside qrCode container
-    function displayCachedQr(dataUrl) {
-      qrCode.innerHTML = ''; // clear any children
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      img.alt = 'Scanned QR (cached)';
-      img.style.width = '100%';
-      img.style.height = 'auto';
-      img.style.borderRadius = '12px';
-      qrCode.appendChild(img);
-    }
-  
-    // If there's a cached QR on load, show it inside the QR container (but keep qrSection hidden)
-    (function initCachedQrOnLoad() {
-      const cached = loadCachedQr();
-      if (cached) {
-        // ensure qrCode is visible later when qrSection shown
-        displayCachedQr(cached);
-      }
-    })();
-  
+    
     // Start camera with given facing mode
     async function startCamera() {
       stopCamera();
       try {
         const constraints = {
-          video: { facingMode: usingFront ? 'user' : 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false
+          video: { facingMode: usingFront ? 'user' : 'environment' }
         };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         currentStream = stream;
         video.srcObject = stream;
-        await video.play();
+        video.play();
         video.style.display = 'block';
         flipBtn.style.display = 'block';
-        // hide qrCode grid (we will show captured image after click)
-        qrCode.style.display = 'none';
       } catch (err) {
         alert('Camera access denied or unavailable.');
-        console.error(err);
       }
     }
-  
+    
     // Stop current stream
     function stopCamera() {
       if (currentStream) {
@@ -849,115 +809,46 @@
         currentStream = null;
       }
     }
-  
-    // Take photo from video and store in cache
-    function captureFrameAndCache() {
-      try {
-        // create canvas sized based on video resolution
-        const w = video.videoWidth || 1280;
-        const h = video.videoHeight || 720;
-        const canvas = document.createElement('canvas');
-        // limit canvas size to avoid huge base64 strings; scale down if needed
-        const MAX_DIM = 800;
-        let scale = 1;
-        if (Math.max(w, h) > MAX_DIM) scale = MAX_DIM / Math.max(w, h);
-        canvas.width = Math.floor(w * scale);
-        canvas.height = Math.floor(h * scale);
-  
-        const ctx = canvas.getContext('2d');
-        // draw current frame
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  
-        // compress to JPEG to save space (quality 0.8)
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-  
-        // persist to localStorage (fallback warning if too large)
-        saveCachedQr(dataUrl);
-  
-        // show the cached image in qrCode container
-        qrCode.style.display = 'grid';
-        displayCachedQr(dataUrl);
-  
-        // stop camera & hide video UI
-        stopCamera();
-        video.style.display = 'none';
-        flipBtn.style.display = 'none';
-  
-        return dataUrl;
-      } catch (e) {
-        console.error('Capture failed', e);
-        alert('Could not capture image.');
-        return null;
-      }
-    }
-  
-    // When "Scan QR" clicked: open qrSection and start camera if no cached QR, otherwise show cached QR with option to retake
+    
+    // When "Scan QR" clicked
     scanBtn.addEventListener('click', () => {
       qrSection.style.display = 'block';
+      qrCode.style.display = 'none';
       qrSection.scrollIntoView({ behavior: 'smooth' });
-  
-      const cached = loadCachedQr();
-      if (cached) {
-        // Display cached image and offer a "Retake" flow: show the Image plus a "Retake" button
-        qrCode.style.display = 'grid';
-        displayCachedQr(cached);
-  
-        // Show a Retake button if not present
-        if (!document.getElementById('retakeBtn')) {
-          const retake = document.createElement('button');
-          retake.id = 'retakeBtn';
-          retake.textContent = 'Retake Photo';
-          retake.style.display = 'block';
-          retake.style.margin = '12px auto';
-          retake.style.padding = '8px 16px';
-          retake.style.borderRadius = '8px';
-          retake.style.border = 'none';
-          retake.style.background = '#f0f0f0';
-          retake.style.cursor = 'pointer';
-          qrSection.insertBefore(retake, qrCode.nextSibling);
-          retake.addEventListener('click', () => {
-            // remove cached and start camera for a fresh capture
-            clearCachedQr();
-            if (retake) retake.remove();
-            startCamera();
-          });
-        }
-      } else {
-        // No cached image — start live camera to capture
-        startCamera();
-      }
+      startCamera();
     });
-  
+    
     // Flip camera
     flipBtn.addEventListener('click', () => {
       usingFront = !usingFront;
       startCamera();
     });
-  
-    // Take photo on video click: capture, cache and show
+    
+    // Take photo
     video.addEventListener('click', () => {
-      const dataUrl = captureFrameAndCache();
-      // option: prefill a fake UPI id from captured image metadata? Not necessary; keep simple.
+      stopCamera();
+      video.style.display = 'none';
+      flipBtn.style.display = 'none';
+      qrCode.style.display = 'grid';
+      generateRandomQR();
     });
-  
-    // Payment process - when user clicks "Enter Amount & Pay" we want the cached image to remain visible while paying.
+    
+    // Payment process
     enterAmountBtn.addEventListener('click', () => {
       paymentModal.style.display = 'flex';
-      // If there's a cached image, we can prefill a visual tag or keep the image visible in the background.
       upiInput.value = 'upiuser@bank';
       amountInput.focus();
     });
-  
+    
     document.getElementById('cancelQrBtn').addEventListener('click', () => {
-      // hide qr section but keep cached image intact (since user wanted it to stay while they pay)
       qrSection.style.display = 'none';
       stopCamera();
     });
-  
+    
     document.getElementById('cancelPayBtn').addEventListener('click', () => {
       paymentModal.style.display = 'none';
     });
-  
+    
     document.getElementById('confirmPayBtn').addEventListener('click', () => {
       const amount = amountInput.value;
       if (!amount || amount <= 0) {
@@ -967,7 +858,7 @@
       paymentModal.style.display = 'none';
       setTimeout(() => showSuccess(amount, 'UPI user', 'upiuser@bank'), 800);
     });
-  
+    
     function showSuccess(amount, name, upi) {
       const txId = 'VEC' + Math.random().toString(36).substr(2, 9).toUpperCase();
       document.getElementById('successAmount').textContent = '₹' + parseFloat(amount).toLocaleString();
@@ -977,29 +868,23 @@
       document.getElementById('successModal').style.display = 'flex';
       document.getElementById('successScreen').style.display = 'block';
       createConfetti();
-      // keep the cached image until user hits Done (so it "stays there while we pay")
     }
-  
+    
     document.getElementById('doneBtn').addEventListener('click', () => {
       document.getElementById('successModal').style.display = 'none';
       qrSection.style.display = 'none';
       amountInput.value = '';
       upiInput.value = '';
-      // Clear cached QR after finishing the simulated transaction (optional)
-      clearCachedQr();
-      // Remove a retake button if present
-      const retake = document.getElementById('retakeBtn');
-      if (retake) retake.remove();
     });
-  
+    
     // Close modals on background click
     document.querySelectorAll('.modal').forEach(modal => {
       modal.addEventListener('click', e => {
         if (e.target === modal) modal.style.display = 'none';
       });
     });
-  
-    // Confetti animation (kept as in the original)
+    
+    // Confetti animation
     function createConfetti() {
       const colors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335'];
       for (let i = 0; i < 30; i++) {
@@ -1025,8 +910,7 @@
         }, i * 50);
       }
     }
-  </script>
-  
+    </script>
     
 </body>
 </html>
