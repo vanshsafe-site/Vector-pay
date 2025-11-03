@@ -741,109 +741,175 @@
   </div>
 
   <script>
-    let usingFrontCamera = true;
-    let stream;
+    // Generate QR Code Pattern
+    function generateQR(size = 10) { // size = number of pixels per side
+  const qr = document.getElementById('qrCode');
+  qr.innerHTML = '';
+  
+  for (let i = 0; i < size * size; i++) {
+    const div = document.createElement('div');
+    div.className = Math.random() > 0.5 ? 'qr-pixel' : 'qr-pixel white';
+    qr.appendChild(div);
+  }
+
+  // Adjust CSS grid dynamically
+  qr.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+}
+
     
-    // Function to open camera
-    function openCamera() {
-      const qrSection = document.getElementById('qrSection');
-      qrSection.innerHTML = `
-        <h3 style="margin-bottom: 8px;">Scan & Pay</h3>
-        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
-          Take a picture of the QR to generate a payment code
-        </p>
-        <video id="cameraPreview" autoplay playsinline style="width: 100%; border-radius: 16px;"></video>
-        <div style="display: flex; gap: 8px; margin-top: 12px;">
-          <button class="btn-secondary" id="flipCameraBtn">Flip Camera</button>
-          <button class="btn-primary" id="captureBtn">Capture QR</button>
-        </div>
-      `;
-      qrSection.style.display = 'block';
+    // Event Listeners
+    document.getElementById('scanBtn').addEventListener('click', () => {
+  generateQR(10); // generate random QR
+  startCameraScan(); // start camera
+  document.getElementById('qrSection').style.display = 'block';
+  document.getElementById('qrSection').scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('cancelQrBtn').addEventListener('click', () => {
+  stopCameraScan(); // stop camera
+  document.getElementById('qrSection').style.display = 'none';
+});
+
     
-      // Start camera
-      startCamera();
+    document.getElementById('enterAmountBtn').addEventListener('click', () => {
+      document.getElementById('paymentModal').style.display = 'flex';
+      document.getElementById('amountInput').focus();
+    });
     
-      // Button events
-      document.getElementById('flipCameraBtn').onclick = () => {
-        usingFrontCamera = !usingFrontCamera;
-        startCamera();
-      };
+    document.getElementById('payContactBtn').addEventListener('click', () => {
+      document.getElementById('paymentModal').style.display = 'flex';
+      document.getElementById('upiInput').value = 'user@paytm';
+    });
     
-      document.getElementById('captureBtn').onclick = () => {
-        takePhoto();
-      };
+    document.getElementById('cancelPayBtn').addEventListener('click', () => {
+      document.getElementById('paymentModal').style.display = 'none';
+    });
+    
+    document.getElementById('confirmPayBtn').addEventListener('click', () => {
+      const amount = document.getElementById('amountInput').value;
+      const upi = document.getElementById('upiInput').value;
+      
+      if (!amount || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+      
+      if (!upi) {
+        alert('Please enter recipient UPI ID');
+        return;
+      }
+      
+      // Hide payment modal
+      document.getElementById('paymentModal').style.display = 'none';
+      
+      // Show success after delay
+      setTimeout(() => {
+        showSuccess(amount, upi);
+      }, 800);
+    });
+    
+    function showSuccess(amount, upi) {
+      const txId = 'VEC' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      
+      document.getElementById('successAmount').textContent = '₹' + parseFloat(amount).toLocaleString();
+      document.getElementById('successRecipient').textContent = upi.split('@')[0];
+      document.getElementById('successUpi').textContent = upi;
+      document.getElementById('successTxId').textContent = txId;
+      
+      document.getElementById('successModal').style.display = 'flex';
+      document.getElementById('successScreen').style.display = 'block';
+      
+      // Confetti effect
+      createConfetti();
     }
     
-    // Start camera with front/back
-    function startCamera() {
-      const video = document.getElementById('cameraPreview');
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: usingFrontCamera ? 'user' : 'environment' }
-      })
-      .then(s => {
-        stream = s;
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        alert('Camera access denied or not supported');
-        console.error(err);
+    document.getElementById('doneBtn').addEventListener('click', () => {
+      document.getElementById('successModal').style.display = 'none';
+      document.getElementById('qrSection').style.display = 'none';
+      
+      // Reset inputs
+      document.getElementById('amountInput').value = '';
+      document.getElementById('upiInput').value = '';
+      document.getElementById('noteInput').value = '';
+    });
+    
+    // Close modals on backdrop click
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
       });
-    }
+    });
     
-    // Capture photo and generate random QR
-    function takePhoto() {
-      if (!stream) return;
-      const video = document.getElementById('cameraPreview');
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-      // Stop camera
-      stream.getTracks().forEach(track => track.stop());
-    
-      // Replace camera preview with generated QR
-      const qrSection = document.getElementById('qrSection');
-      qrSection.innerHTML = `
-        <h3 style="margin-bottom: 8px;">QR Generated!</h3>
-        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
-          Enter recipient name and amount to proceed
-        </p>
-        <div class="qr-container" id="qrCode"></div>
-        <button class="btn-primary" id="enterAmountBtn">Enter Amount & Pay</button>
-        <button class="btn-secondary" id="cancelQrBtn">Cancel</button>
-      `;
-      generateRandomQR();
-    
-      // Event listeners
-      document.getElementById('enterAmountBtn').onclick = () => {
-        document.getElementById('paymentModal').style.display = 'flex';
-      };
-      document.getElementById('cancelQrBtn').onclick = () => {
-        qrSection.style.display = 'none';
-      };
-    }
-    
-    // Generate random QR pattern
-    function generateRandomQR() {
-      const qr = document.getElementById('qrCode');
-      qr.innerHTML = '';
-      const size = 7;
-      for (let i = 0; i < size*size; i++) {
-        const div = document.createElement('div');
-        div.className = 'qr-pixel ' + (Math.random() > 0.5 ? '' : 'white');
-        qr.appendChild(div);
+    // Confetti animation
+    function createConfetti() {
+      const colors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335'];
+      for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.style.position = 'fixed';
+          confetti.style.width = '10px';
+          confetti.style.height = '10px';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.left = Math.random() * window.innerWidth + 'px';
+          confetti.style.top = '-10px';
+          confetti.style.borderRadius = '50%';
+          confetti.style.zIndex = '10000';
+          confetti.style.pointerEvents = 'none';
+          document.body.appendChild(confetti);
+          
+          const fall = confetti.animate([
+            { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+            { transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+          ], {
+            duration: 2000 + Math.random() * 1000,
+            easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+          });
+          
+          fall.onfinish = () => confetti.remove();
+        }, i * 30);
       }
     }
     
-    // Trigger camera on Scan QR button
-    document.getElementById('scanBtn').addEventListener('click', openCamera);
-    </script>
-    
-    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        document.getElementById('qrSection').style.display = 'none';
+      }
+    });
+    async function startCameraScan() {
+  const qrSection = document.getElementById('qrSection');
+  const qrContainer = document.getElementById('qrCode');
+
+  // Add a video element if not already
+  let video = qrSection.querySelector('video');
+  if (!video) {
+    video = document.createElement('video');
+    video.style.width = '100%';
+    video.style.borderRadius = '16px';
+    qrSection.insertBefore(video, qrContainer);
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream;
+    video.play();
+  } catch (err) {
+    alert('Camera access denied or not available.');
+  }
+}
+
+// Stop camera when closing QR section
+function stopCameraScan() {
+  const video = document.querySelector('#qrSection video');
+  if (video && video.srcObject) {
+    video.srcObject.getTracks().forEach(track => track.stop());
+    video.remove();
+  }
+}
+
+  </script>
 </body>
 </html>
